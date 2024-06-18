@@ -87,3 +87,21 @@ func (tty *TTY) Output() *os.File {
 func (tty *TTY) Signal() chan os.Signal {
 	return tty.sig
 }
+
+func (tty *TTY) EnableAlternateScreenBuffer() {
+	tty.out.WriteString("\033[?1049h")
+}
+
+func (tty *TTY) DisableAlternateScreenBuffer() {
+	tty.out.WriteString("\033[?1049l")
+}
+
+func (tty *TTY) ClearScreen() {
+	tty.out.WriteString("\033[2J\033[H")
+}
+
+func (tty *TTY) Cleanup() error {
+	tty.DisableAlternateScreenBuffer()
+	tty.ClearScreen()
+	return tty.Close()
+}

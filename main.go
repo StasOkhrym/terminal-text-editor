@@ -21,13 +21,15 @@ func main() {
 		}
 	}()
 
+	tty.EnableAlternateScreenBuffer()
+
 	signal.Notify(tty.Signal(), syscall.SIGINT, syscall.SIGTERM)
 
 	fmt.Println("TTY test program. Press Ctrl+C to exit.")
 
 	go func() {
 		<-tty.Signal()
-		fmt.Println("Exiting...")
+		tty.Cleanup()
 		os.Exit(0)
 	}()
 
