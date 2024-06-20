@@ -65,6 +65,10 @@ func (gb *GapBuffer) Buffer() []byte {
 	return gb.buffer
 }
 
+func (gb *GapBuffer) AppendToBuffer(data []byte) {
+	gb.buffer = append(gb.buffer, data...)
+}
+
 func (gb *GapBuffer) Size() int {
 	return len(gb.buffer)
 }
