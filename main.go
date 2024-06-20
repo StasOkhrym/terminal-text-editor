@@ -3,45 +3,28 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"text_editor/teletype"
+	"text_editor/editor"
 )
 
 func main() {
-	tty, err := teletype.Open()
-	if err != nil {
-		fmt.Printf("Error opening TTY: %v\n", err)
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: ./main <file_path>")
 		return
 	}
-	defer func() {
-		if err := tty.Close(); err != nil {
-			fmt.Printf("Error closing TTY: %v\n", err)
-		}
-	}()
 
-	tty.EnableAlternateScreenBuffer()
+	filePath := os.Args[1]
 
-	signal.Notify(tty.Signal(), syscall.SIGINT, syscall.SIGTERM)
+	e, err := editor.NewEditor(filePath)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	fmt.Println("TTY test program. Press Ctrl+C to exit.")
+	defer e.Close()
 
-	go func() {
-		<-tty.Signal()
-		tty.Cleanup()
-		os.Exit(0)
-	}()
-
-	for {
-		r, err := tty.Read()
-		if err != nil {
-			fmt.Printf("Error reading from TTY: %v\n", err)
-			continue
-		}
-		_, err = tty.Output().WriteString("You pressed: " + string(r) + "\n")
-		if err != nil {
-			return
-		}
+	if err := e.Run(); err != nil {
+		fmt.Println(err)
+		return
 	}
 }
