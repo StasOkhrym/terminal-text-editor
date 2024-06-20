@@ -22,7 +22,7 @@ type TTY struct {
 	out        *os.File
 	termios    unix.Termios
 	sig        chan os.Signal
-	windowSize WindowSize
+	windowSize *WindowSize
 
 	closed bool
 }
@@ -69,12 +69,15 @@ func open(path string) (*TTY, error) {
 	signal.Notify(sig, syscall.SIGWINCH)
 
 	tty := &TTY{
-		in:         in,
-		bin:        bin,
-		out:        out,
-		termios:    *termios,
-		sig:        sig,
-		windowSize: WindowSize{Rows: 0, Cols: 0},
+		in:      in,
+		bin:     bin,
+		out:     out,
+		termios: *termios,
+		sig:     sig,
+		windowSize: &WindowSize{
+			Rows: 0,
+			Cols: 0,
+		},
 
 		closed: false,
 	}
@@ -98,7 +101,6 @@ func (tty *TTY) UpdateWindowSize() {
 
 	tty.windowSize.Rows = int(ws.Row)
 	tty.windowSize.Cols = int(ws.Col)
-	tty.Output().WriteString(fmt.Sprintf("cols: %d, rows: %d", tty.windowSize.Cols, tty.windowSize.Rows))
 }
 
 func (tty *TTY) Close() error {
@@ -130,6 +132,10 @@ func (tty *TTY) Signal() chan os.Signal {
 	return tty.sig
 }
 
+func (tty *TTY) WindowSize() *WindowSize {
+	return tty.windowSize
+}
+
 func (tty *TTY) EnableAlternateScreenBuffer() {
 	tty.out.WriteString("\033[?1049h")
 }
@@ -148,8 +154,11 @@ func (tty *TTY) Cleanup() error {
 	return tty.Close()
 }
 
-func (tty *TTY) UpdateCursorPosition(x int, y int) {
-	escapeCode := fmt.Sprintf("\033[%d;%dH", y+1, x+1)
+func (tty *TTY) MoveCursorTo(x int, y int) {
+	if x < 0 || y < 0 || x >= tty.windowSize.Cols || y >= tty.windowSize.Rows {
+		return
+	}
+	escapeCode := fmt.Sprintf("\033[%d;%dH", x+1, y+1)
 	tty.out.WriteString(escapeCode)
 }
 

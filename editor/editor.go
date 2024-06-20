@@ -2,6 +2,8 @@ package editor
 
 import (
 	"os"
+	"os/signal"
+	"syscall"
 
 	"text_editor/buffer"
 	"text_editor/teletype"
@@ -11,6 +13,8 @@ type Editor struct {
 	buffer *buffer.GapBuffer
 	file   *os.File
 	tty    *teletype.TTY
+
+	cursor *Cursor
 }
 
 func NewEditor(filePath string) (*Editor, error) {
@@ -36,6 +40,7 @@ func NewEditor(filePath string) (*Editor, error) {
 		buffer: gb,
 		file:   file,
 		tty:    tty,
+		cursor: NewCursor(),
 	}, nil
 }
 
@@ -63,34 +68,46 @@ func (e *Editor) Run() error {
 	e.tty.EnableAlternateScreenBuffer()
 	defer e.tty.DisableAlternateScreenBuffer()
 
-	e.tty.Output().WriteString("Text editor. Press Ctrl+X to exit.\n\n")
-	e.tty.Output().WriteString(e.buffer.Text())
+	e.RenderUI(e.file.Name())
 
+	// Create a channel to listen for window resize events
+	winResize := make(chan os.Signal, 1)
+	signal.Notify(winResize, syscall.SIGWINCH)
+
+	go func() {
+		for range winResize {
+			e.RenderUI(e.file.Name())
+		}
+	}()
+
+	// Main event loop
 	for {
 		bytes, err := e.tty.ReadKey()
-		e.tty.Output().WriteString(string(bytes))
 		if err != nil {
 			os.Exit(1)
 		}
 
 		switch string(bytes) {
 		case teletype.KeyArrowUp:
-			e.tty.UpdateCursorPosition(0, -1)
+			e.MoveCursorTo(0, -1)
 		case teletype.KeyArrowDown:
-			e.tty.UpdateCursorPosition(0, 1)
+			e.tty.MoveCursorTo(0, 1)
 		case teletype.KeyArrowRight:
-			e.tty.UpdateCursorPosition(1, 0)
+			e.tty.MoveCursorTo(1, 0)
 		case teletype.KeyArrowLeft:
-			e.tty.UpdateCursorPosition(-1, 0)
+			e.tty.MoveCursorTo(-1, 0)
 		case teletype.KeyCtrlS:
-			e.tty.Output().WriteString("pasting")
-		// case teletype.KeyDelete:
-		// 	e.tty.Delete()
-		// case teletype.KeyEnter:
-		// 	e.tty.Insert('\n')
+			e.SaveFile()
 		case teletype.KeyCtrlX:
 			return e.Close()
 		}
-	}
 
+		// Refresh UI after handling the key
+		e.RenderUI(e.file.Name())
+	}
+}
+
+func (e *Editor) SaveFile() {
+	e.tty.Output().WriteString("Saving file...\n")
+	// Implement actual save logic here
 }
