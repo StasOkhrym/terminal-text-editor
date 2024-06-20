@@ -10,13 +10,19 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+type WindowSize struct {
+	Rows int
+	Cols int
+}
+
 // TTY base representation for Teletypewriter
 type TTY struct {
-	in      *os.File
-	bin     *bufio.Reader
-	out     *os.File
-	termios unix.Termios
-	sig     chan os.Signal
+	in         *os.File
+	bin        *bufio.Reader
+	out        *os.File
+	termios    unix.Termios
+	sig        chan os.Signal
+	windowSize WindowSize
 
 	closed bool
 }
@@ -60,15 +66,39 @@ func open(path string) (*TTY, error) {
 
 	sig := make(chan os.Signal, 1)
 	signal.Ignore(syscall.SIGINT)
-	return &TTY{
-		in:      in,
-		bin:     bin,
-		out:     out,
-		termios: *termios,
-		sig:     sig,
+	signal.Notify(sig, syscall.SIGWINCH)
+
+	tty := &TTY{
+		in:         in,
+		bin:        bin,
+		out:        out,
+		termios:    *termios,
+		sig:        sig,
+		windowSize: WindowSize{Rows: 0, Cols: 0},
 
 		closed: false,
-	}, nil
+	}
+
+	go func() {
+		for range sig {
+			tty.UpdateWindowSize()
+		}
+	}()
+
+	tty.UpdateWindowSize()
+
+	return tty, nil
+}
+
+func (tty *TTY) UpdateWindowSize() {
+	ws, err := unix.IoctlGetWinsize(int(tty.in.Fd()), unix.TIOCGWINSZ)
+	if err != nil {
+		panic(err)
+	}
+
+	tty.windowSize.Rows = int(ws.Row)
+	tty.windowSize.Cols = int(ws.Col)
+	tty.Output().WriteString(fmt.Sprintf("cols: %d, rows: %d", tty.windowSize.Cols, tty.windowSize.Rows))
 }
 
 func (tty *TTY) Close() error {
