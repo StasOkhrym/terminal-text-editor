@@ -24,3 +24,34 @@ func (e *Editor) MoveCursorTo(dx, dy int) {
 
 	e.tty.MoveCursorTo(newCol, newRow)
 }
+
+func (e *Editor) SaveFile() error {
+	_, err := e.file.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+	_, err = e.file.Write(e.buffer.Output())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Editor) Close() error {
+	if e.tty == nil && e.file == nil {
+		return nil
+	}
+
+	if err := e.tty.Close(); err != nil {
+		return err
+	}
+	e.tty = nil
+
+	if err := e.file.Close(); err != nil {
+		return err
+	}
+	e.file = nil
+
+	return nil
+}
