@@ -1,7 +1,7 @@
 package editor
 
 import (
-	"fmt"
+	"os"
 )
 
 func (e *Editor) MoveCursorTo(dx, dy int) {
@@ -15,7 +15,7 @@ func (e *Editor) MoveCursorTo(dx, dy int) {
 
 	// Check if the new cursor position is within the total rows and columns, excluding the header and footer rows
 	if newRow < headerRows || newRow >= totalRows-footerRows || newCol < 0 || newCol >= totalCols {
-		e.buffer.AppendToBuffer([]byte(fmt.Sprintf("Cursor out of bounds: %d, %d\n", newRow, newCol)))
+		// e.buffer.AppendToBuffer([]byte(fmt.Sprintf("Cursor out of bounds: %d, %d\n", newRow, newCol)))
 		return
 	}
 
@@ -26,16 +26,8 @@ func (e *Editor) MoveCursorTo(dx, dy int) {
 }
 
 func (e *Editor) SaveFile() error {
-	_, err := e.file.Seek(0, 0)
-	if err != nil {
-		return err
-	}
-	_, err = e.file.Write(e.buffer.Output())
-	if err != nil {
-		return err
-	}
+	return os.WriteFile(e.file.Name(), []byte(e.buffer.String()), 0644)
 
-	return nil
 }
 
 func (e *Editor) Close() error {

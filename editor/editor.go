@@ -10,7 +10,7 @@ import (
 )
 
 type Editor struct {
-	buffer *buffer.GapBuffer
+	buffer *buffer.Matrix
 	file   *os.File
 	tty    *teletype.TTY
 
@@ -23,8 +23,7 @@ func NewEditor(filePath string) (*Editor, error) {
 		return nil, err
 	}
 
-	gb := buffer.NewGapBuffer(1024)
-	_, err = file.Read(gb.Buffer())
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -36,8 +35,11 @@ func NewEditor(filePath string) (*Editor, error) {
 	}
 	defer tty.Close()
 
+	rows, cols := tty.WindowSize().Rows, tty.WindowSize().Cols
+	m := buffer.NewMatrix(rows, cols, content)
+
 	return &Editor{
-		buffer: gb,
+		buffer: m,
 		file:   file,
 		tty:    tty,
 		cursor: NewCursor(),
@@ -57,6 +59,7 @@ func (e *Editor) Run() error {
 
 	go func() {
 		for range winResize {
+			e.tty.UpdateWindowSize()
 			e.RenderUI(e.file.Name())
 		}
 	}()
@@ -78,10 +81,26 @@ func (e *Editor) Run() error {
 		case teletype.KeyArrowLeft:
 			e.MoveCursorTo(-1, 0)
 		case teletype.KeyCtrlS:
+			e.RenderSaved(e.file.Name())
 			e.SaveFile()
-			e.buffer.AppendToBuffer([]byte("Saving file...\n"))
+			for {
+				upBytes, err := e.tty.ReadKey()
+				if err != nil {
+					os.Exit(1)
+				}
+
+				if len(upBytes) != 0 {
+					break
+				}
+			}
+
 		case teletype.KeyCtrlX:
 			return e.Close()
+		default:
+			// Insert the pressed key at the current cursor position
+			e.buffer.Set(e.cursor.Row+1, e.cursor.Col, bytes)
+			// Move the cursor one position to the right
+			e.MoveCursorTo(1, 0)
 		}
 
 		// Refresh UI after handling the key
