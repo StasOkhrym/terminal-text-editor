@@ -58,6 +58,10 @@ func open(path string) (*TTY, error) {
 	termios.Lflag &^= unix.ECHO | unix.ICANON
 	termios.Cc[unix.VMIN] = 1
 	termios.Cc[unix.VTIME] = 0
+	// Have no idea why it is still processing backspace
+	termios.Cc[unix.VERASE] = 0
+	termios.Cc[unix.VWERASE] = 0
+	termios.Cc[unix.VINTR] = 0
 
 	err = unix.IoctlSetTermios(int(in.Fd()), unix.TIOCSETA, termios)
 	if err != nil {

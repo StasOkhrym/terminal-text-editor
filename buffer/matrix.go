@@ -45,6 +45,12 @@ func (m *Matrix) Get(row, col int) byte {
 	return m.Rows[row][col]
 }
 
+func (m *Matrix) Pop(row, col int) {
+	if col > 0 && len(m.Rows[row]) > 0 {
+		m.Rows[row] = append(m.Rows[row][:col-1], m.Rows[row][col:]...)
+	}
+}
+
 func (m *Matrix) String() string {
 	var lines []string
 	for _, row := range m.Rows {

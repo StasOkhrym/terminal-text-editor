@@ -52,7 +52,7 @@ func (e *Editor) Run() error {
 	e.tty.EnableAlternateScreenBuffer()
 	defer e.tty.DisableAlternateScreenBuffer()
 
-	e.RenderUI(e.file.Name())
+	e.RenderUI(e.file.Name(), false)
 
 	winResize := make(chan os.Signal, 1)
 	signal.Notify(winResize, syscall.SIGWINCH)
@@ -60,7 +60,7 @@ func (e *Editor) Run() error {
 	go func() {
 		for range winResize {
 			e.tty.UpdateWindowSize()
-			e.RenderUI(e.file.Name())
+			e.RenderUI(e.file.Name(), false)
 		}
 	}()
 
@@ -81,7 +81,7 @@ func (e *Editor) Run() error {
 		case teletype.KeyArrowLeft:
 			e.MoveCursorTo(-1, 0)
 		case teletype.KeyCtrlS:
-			e.RenderSaved(e.file.Name())
+			e.RenderUI(e.file.Name(), true)
 			e.SaveFile()
 			for {
 				upBytes, err := e.tty.ReadKey()
@@ -96,14 +96,15 @@ func (e *Editor) Run() error {
 
 		case teletype.KeyCtrlX:
 			return e.Close()
+		case teletype.KeyBackspace:
+			e.buffer.Pop(e.cursor.Row-2, e.cursor.Col)
+			e.MoveCursorTo(-1, 0)
 		default:
-			// Insert the pressed key at the current cursor position
-			e.buffer.Set(e.cursor.Row+1, e.cursor.Col, bytes)
-			// Move the cursor one position to the right
+			e.buffer.Set(e.cursor.Row-2, e.cursor.Col, bytes)
 			e.MoveCursorTo(1, 0)
 		}
 
 		// Refresh UI after handling the key
-		e.RenderUI(e.file.Name())
+		e.RenderUI(e.file.Name(), false)
 	}
 }
