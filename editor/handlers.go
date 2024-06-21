@@ -31,6 +31,12 @@ func (e *Editor) SaveFile() error {
 }
 
 func (e *Editor) Close() error {
+	if e.closed {
+		return nil
+	}
+	close(e.receiver)
+	e.closed = true
+
 	if e.tty == nil && e.file == nil {
 		return nil
 	}
@@ -38,12 +44,10 @@ func (e *Editor) Close() error {
 	if err := e.tty.Close(); err != nil {
 		return err
 	}
-	e.tty = nil
 
 	if err := e.file.Close(); err != nil {
 		return err
 	}
-	e.file = nil
 
 	return nil
 }

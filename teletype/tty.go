@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"golang.org/x/sys/unix"
 )
@@ -21,10 +19,7 @@ type TTY struct {
 	bin        *bufio.Reader
 	out        *os.File
 	termios    unix.Termios
-	sig        chan os.Signal
 	windowSize *WindowSize
-
-	closed bool
 }
 
 func Open() (*TTY, error) {
@@ -68,29 +63,16 @@ func open(path string) (*TTY, error) {
 		return nil, err
 	}
 
-	sig := make(chan os.Signal, 1)
-	signal.Ignore(syscall.SIGINT)
-	signal.Notify(sig, syscall.SIGWINCH)
-
 	tty := &TTY{
 		in:      in,
 		bin:     bin,
 		out:     out,
 		termios: *termios,
-		sig:     sig,
 		windowSize: &WindowSize{
 			Rows: 0,
 			Cols: 0,
 		},
-
-		closed: false,
 	}
-
-	go func() {
-		for range sig {
-			tty.UpdateWindowSize()
-		}
-	}()
 
 	tty.UpdateWindowSize()
 
@@ -108,15 +90,6 @@ func (tty *TTY) UpdateWindowSize() {
 }
 
 func (tty *TTY) Close() error {
-	if tty.closed {
-		return nil
-	}
-	signal.Stop(tty.sig)
-	if tty.sig != nil {
-		close(tty.sig)
-		tty.sig = nil
-	}
-	tty.closed = true
 	return unix.IoctlSetTermios(int(tty.in.Fd()), unix.TIOCSETA, &tty.termios)
 }
 
@@ -130,10 +103,6 @@ func (tty *TTY) InputReader() *bufio.Reader {
 
 func (tty *TTY) Output() *os.File {
 	return tty.out
-}
-
-func (tty *TTY) Signal() chan os.Signal {
-	return tty.sig
 }
 
 func (tty *TTY) WindowSize() *WindowSize {

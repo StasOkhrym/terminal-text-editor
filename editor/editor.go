@@ -14,7 +14,9 @@ type Editor struct {
 	file   *os.File
 	tty    *teletype.TTY
 
-	cursor *Cursor
+	receiver chan os.Signal
+	cursor   *Cursor
+	closed   bool
 }
 
 func NewEditor(filePath string) (*Editor, error) {
@@ -38,11 +40,15 @@ func NewEditor(filePath string) (*Editor, error) {
 	rows, cols := tty.WindowSize().Rows, tty.WindowSize().Cols
 	m := buffer.NewMatrix(rows, cols, content)
 
+	receiver := make(chan os.Signal, 1)
+
 	return &Editor{
-		buffer: m,
-		file:   file,
-		tty:    tty,
-		cursor: NewCursor(),
+		buffer:   m,
+		file:     file,
+		tty:      tty,
+		cursor:   NewCursor(),
+		receiver: receiver,
+		closed:   false,
 	}, nil
 }
 
@@ -52,17 +58,8 @@ func (e *Editor) Run() error {
 	e.tty.EnableAlternateScreenBuffer()
 	defer e.tty.DisableAlternateScreenBuffer()
 
+	e.HandleSignals()
 	e.RenderUI(e.file.Name(), false)
-
-	winResize := make(chan os.Signal, 1)
-	signal.Notify(winResize, syscall.SIGWINCH)
-
-	go func() {
-		for range winResize {
-			e.tty.UpdateWindowSize()
-			e.RenderUI(e.file.Name(), false)
-		}
-	}()
 
 	// Main event loop
 	for {
@@ -107,4 +104,19 @@ func (e *Editor) Run() error {
 		// Refresh UI after handling the key
 		e.RenderUI(e.file.Name(), false)
 	}
+}
+
+func (e *Editor) HandleSignals() {
+	signal.Ignore(syscall.SIGINT)
+	signal.Notify(e.receiver, syscall.SIGWINCH)
+
+	go func() {
+		for {
+			switch channel := <-e.receiver; channel {
+			case syscall.SIGWINCH:
+				e.tty.UpdateWindowSize()
+				e.RenderUI(e.file.Name(), false)
+			}
+		}
+	}()
 }
