@@ -44,10 +44,12 @@ func (e *Editor) Close() error {
 	if err := e.tty.Close(); err != nil {
 		return err
 	}
+	e.tty = nil
 
 	if err := e.file.Close(); err != nil {
 		return err
 	}
+	e.file = nil
 
 	return nil
 }
