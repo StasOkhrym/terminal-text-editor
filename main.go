@@ -9,7 +9,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: ./main <file_path>")
+		fmt.Println("Give me <file_path>")
 		return
 	}
 
