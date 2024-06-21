@@ -44,24 +44,6 @@ func NewEditor(filePath string) (*Editor, error) {
 	}, nil
 }
 
-func (e *Editor) Close() error {
-	if e.tty == nil && e.file == nil {
-		return nil
-	}
-
-	if err := e.tty.Close(); err != nil {
-		return err
-	}
-	e.tty = nil
-
-	if err := e.file.Close(); err != nil {
-		return err
-	}
-	e.file = nil
-
-	return nil
-}
-
 func (e *Editor) Run() error {
 	defer e.Close()
 
@@ -70,7 +52,6 @@ func (e *Editor) Run() error {
 
 	e.RenderUI(e.file.Name())
 
-	// Create a channel to listen for window resize events
 	winResize := make(chan os.Signal, 1)
 	signal.Notify(winResize, syscall.SIGWINCH)
 
@@ -98,6 +79,7 @@ func (e *Editor) Run() error {
 			e.MoveCursorTo(-1, 0)
 		case teletype.KeyCtrlS:
 			e.SaveFile()
+			e.buffer.AppendToBuffer([]byte("Saving file...\n"))
 		case teletype.KeyCtrlX:
 			return e.Close()
 		}
@@ -105,9 +87,4 @@ func (e *Editor) Run() error {
 		// Refresh UI after handling the key
 		e.RenderUI(e.file.Name())
 	}
-}
-
-func (e *Editor) SaveFile() {
-	e.tty.Output().WriteString("Saving file...\n")
-	// Implement actual save logic here
 }

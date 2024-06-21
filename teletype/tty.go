@@ -54,7 +54,7 @@ func open(path string) (*TTY, error) {
 	}
 
 	// Applying bitmask for Termios settings
-	termios.Iflag &^= unix.ISTRIP | unix.INLCR | unix.ICRNL | unix.IGNCR | unix.IXOFF
+	termios.Iflag &^= unix.ISTRIP | unix.INLCR | unix.ICRNL | unix.IGNCR | unix.IXON
 	termios.Lflag &^= unix.ECHO | unix.ICANON
 	termios.Cc[unix.VMIN] = 1
 	termios.Cc[unix.VTIME] = 0
