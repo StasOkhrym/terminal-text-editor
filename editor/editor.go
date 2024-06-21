@@ -89,13 +89,13 @@ func (e *Editor) Run() error {
 
 		switch string(bytes) {
 		case teletype.KeyArrowUp:
-			e.MoveCursorTo(-1, 0)
-		case teletype.KeyArrowDown:
-			e.MoveCursorTo(1, 0)
-		case teletype.KeyArrowRight:
-			e.MoveCursorTo(0, 1)
-		case teletype.KeyArrowLeft:
 			e.MoveCursorTo(0, -1)
+		case teletype.KeyArrowDown:
+			e.MoveCursorTo(0, 1)
+		case teletype.KeyArrowRight:
+			e.MoveCursorTo(1, 0)
+		case teletype.KeyArrowLeft:
+			e.MoveCursorTo(-1, 0)
 		case teletype.KeyCtrlS:
 			e.SaveFile()
 		case teletype.KeyCtrlX:

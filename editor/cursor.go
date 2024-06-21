@@ -8,8 +8,8 @@ type Cursor struct {
 func NewCursor() *Cursor {
 	// The cursor is initially positioned with padding from header
 	return &Cursor{
-		Row: 0,
-		Col: 2,
+		Row: 2,
+		Col: 0,
 	}
 }
 

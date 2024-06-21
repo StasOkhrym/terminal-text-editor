@@ -16,7 +16,7 @@ func (e *Editor) MoveCursorTo(dx, dy int) {
 	// Check if the new cursor position is within the total rows and columns, excluding the header and footer rows
 	if newRow < headerRows || newRow >= totalRows-footerRows || newCol < 0 || newCol >= totalCols {
 		e.buffer.AppendToBuffer([]byte(fmt.Sprintf("Cursor out of bounds: %d, %d\n", newRow, newCol)))
-		return
+		// return
 	}
 
 	e.cursor.Row = newRow

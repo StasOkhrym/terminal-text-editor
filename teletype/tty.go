@@ -154,11 +154,11 @@ func (tty *TTY) Cleanup() error {
 	return tty.Close()
 }
 
-func (tty *TTY) MoveCursorTo(x int, y int) {
-	if x < 0 || y < 0 || x >= tty.windowSize.Cols || y >= tty.windowSize.Rows {
+func (tty *TTY) MoveCursorTo(row int, col int) {
+	if row < 0 || col < 0 || row >= tty.windowSize.Cols || col >= tty.windowSize.Rows {
 		return
 	}
-	escapeCode := fmt.Sprintf("\033[%d;%dH", x+1, y+1)
+	escapeCode := fmt.Sprintf("\033[%d;%dH", row+1, col+1)
 	tty.out.WriteString(escapeCode)
 }
 

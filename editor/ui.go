@@ -4,6 +4,26 @@ import (
 	"fmt"
 )
 
+type ScreenBuffer struct {
+	Rows [][]byte
+}
+
+func NewScreenBuffer(rows, cols int) *ScreenBuffer {
+	buffer := make([][]byte, rows)
+	for i := range buffer {
+		buffer[i] = make([]byte, cols)
+	}
+	return &ScreenBuffer{Rows: buffer}
+}
+
+func (sb *ScreenBuffer) Set(row, col int, b byte) {
+	sb.Rows[row][col] = b
+}
+
+func (sb *ScreenBuffer) Get(row, col int) byte {
+	return sb.Rows[row][col]
+}
+
 func (e *Editor) RenderUI(filePath string) {
 	totalRows := e.tty.WindowSize().Rows
 	totalCols := e.tty.WindowSize().Cols
@@ -27,5 +47,5 @@ func (e *Editor) RenderUI(filePath string) {
 	paddedFooterText := fmt.Sprintf("%*s%s%*s", padding, "", footerText, padding, "")
 	e.tty.Output().WriteString(fmt.Sprintf("\033[42m\033[37m%*s\033[0m", totalCols, paddedFooterText))
 
-	e.tty.MoveCursorTo(e.cursor.Col, e.cursor.Row)
+	e.tty.MoveCursorTo(e.cursor.Row, e.cursor.Col)
 }
