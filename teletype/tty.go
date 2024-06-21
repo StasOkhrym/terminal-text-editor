@@ -159,7 +159,7 @@ func (tty *TTY) Cleanup() error {
 }
 
 func (tty *TTY) MoveCursorTo(row int, col int) {
-	if row < 0 || col < 0 || row >= tty.windowSize.Cols || col >= tty.windowSize.Rows {
+	if row < 0 || col < 0 || col >= tty.windowSize.Cols || row >= tty.windowSize.Rows {
 		return
 	}
 	escapeCode := fmt.Sprintf("\033[%d;%dH", row+1, col+1)

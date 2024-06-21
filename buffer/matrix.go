@@ -29,11 +29,13 @@ func NewMatrix(rows, cols int, content []byte) *Matrix {
 }
 
 func (m *Matrix) Set(row, col int, b []byte) {
-	// check if we can append the byte slice to the row
+	for len(m.Rows) <= row {
+		m.Rows = append(m.Rows, make([]byte, 0))
+	}
+
 	if len(m.Rows[row]) >= col+len(b) {
 		copy(m.Rows[row][col:], b)
 	} else {
-		// if not, we need to resize the row
 		newRow := make([]byte, col+len(b))
 		copy(newRow, m.Rows[row][:col])
 		copy(newRow[col:], b)

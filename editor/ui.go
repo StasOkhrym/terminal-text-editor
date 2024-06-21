@@ -58,8 +58,8 @@ func (e *Editor) RenderFooter(totalRows, totalCols int, saved bool) {
 		footerText = "File Saved! Press any key to continue."
 	} else {
 		footerText = fmt.Sprintf(
-			"CTRL + S: Save      CTRL + X: Exit   Cursor Row: %d   Cursor Col: %d",
-			e.cursor.Row, e.cursor.Col,
+			"CTRL + S: Save      CTRL + X: Exit   Cursor Row: %d   Cursor Col: %d  Window Size: %d x %d",
+			e.cursor.Row, e.cursor.Col, totalCols, totalRows,
 		)
 	}
 
